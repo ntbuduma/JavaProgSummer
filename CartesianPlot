@@ -1,0 +1,133 @@
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.Line2D;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+
+public class CartesianPlot extends JPanel
+{
+
+	int graphNumber;
+	public CartesianPlot(int x)
+	{
+		graphNumber = x;
+	}
+	protected void paintComponent(Graphics g)
+	{
+		super.paintComponent(g);
+		Drawing d = new Drawing(g);
+		d.draw();
+	}
+	
+	public class Drawing
+	{
+		Graphics2D g2;
+		String currLine;
+		double width = getWidth();
+		double height = getHeight();
+		double inc = 0;
+		double start = 0;
+		ArrayList<Double> yCoords = new ArrayList<Double>();
+		public Drawing(Graphics g)
+		{
+			g2 = (Graphics2D)g;
+		}
+		public void draw()
+		{
+			try 
+			{
+				BufferedReader br = new BufferedReader(new FileReader("Graph (" + graphNumber + ").plt"));
+				while ((currLine = br.readLine()) != null)
+				{
+					yCoords.add(Double.parseDouble(currLine));
+				}
+				inc = width/(yCoords.size() - 1);
+				Scaler s = new Scaler(yCoords);
+				ArrayList<Double> newCoords = s.scale();
+				for (int i = 0; i < yCoords.size() - 1; i++)
+				{
+					double newY = newCoords.get(i);
+					double newNextY = newCoords.get(i + 1);
+					System.out.println((height - newY) + " " + (height - newNextY));
+					g2.draw(new Line2D.Double(start, height - newY, start + inc, height - newNextY));
+					start += inc;
+				}
+				br.close();
+			} 
+			catch (IOException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public class Scaler
+	{
+		ArrayList<Double> toScale = new ArrayList<Double>();
+		
+		public Scaler(ArrayList<Double> d)
+		{
+			toScale = d;
+		}
+		
+		public ArrayList<Double> getToScale()
+		{
+			return toScale;
+		}
+		
+		public ArrayList<Double> scale()
+		{
+			double max = -Double.MAX_VALUE;
+			double min = Double.MAX_VALUE;
+			for (int i = 0; i < toScale.size(); i++)
+			{
+				if (toScale.get(i) > max)
+				{
+					max = toScale.get(i);
+				}
+				if (toScale.get(i) < min)
+				{
+					min = toScale.get(i);
+				}
+			}
+			ArrayList<Double> newD = new ArrayList<Double>();
+			if (min < 0)
+			{
+				max -= min;
+				for (int i = 0; i < toScale.size(); i++)
+				{
+					double x = toScale.get(i) - min;
+					newD.add(getHeight()/max * x);
+				}
+				return newD;
+			}
+			else
+			{
+				for (int i = 0; i < toScale.size(); i++)
+				{
+					newD.add(getHeight()/max * toScale.get(i));
+				}
+				return newD;
+			}
+		}
+	}
+	
+	public static void main(String[] args) {
+		for (int i = 1; i <= 4; i++)
+		{
+			JFrame f = new JFrame();
+	        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	        f.add(new CartesianPlot(i));
+	        f.setSize(400,400);
+	        f.setLocation(0 + (i-1) * 350,200);
+	        f.setVisible(true);
+		}
+    }
+}
