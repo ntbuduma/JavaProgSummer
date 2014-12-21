@@ -1,0 +1,133 @@
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.*;
+
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*; 
+
+public class Server 
+{
+	private static class ServerXML extends Thread
+	{
+		private Socket sock;
+		File xml;
+		
+		public ServerXML(Socket socket)
+		{
+			sock = socket;
+		}
+		
+		public void run()
+		{
+			try{
+				System.out.println("Hello!");
+				BufferedReader in = new BufferedReader(
+                        new InputStreamReader(sock.getInputStream()));
+                PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
+                String input = in.readLine();
+                System.out.println(input);
+                DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
+        		DocumentBuilder docBuilder = builderFactory.newDocumentBuilder();
+        		Document doc = docBuilder.newDocument();
+        		processDocument(doc, input);
+        		xml = createXML(doc);
+        		BufferedReader br = new BufferedReader(new FileReader(xml));
+        		String s = new String();
+        		while((s = br.readLine()) != null){
+            		System.out.println(s);}
+        		System.out.println(xml.getAbsolutePath());
+        		while (true)
+        		{
+        			byte[] mybytearray = new byte[(int) xml.length()];
+        		    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(xml));
+        		    System.out.println("It worked!");
+        		    bis.read(mybytearray, 0, mybytearray.length);
+        		    OutputStream os = sock.getOutputStream();
+        		    os.write(mybytearray, 0, mybytearray.length);
+        		    os.flush();
+        		    os.close();
+        		}
+			}
+			catch(IOException e)
+			{
+				
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		public void processDocument(Document doc, String sfile) throws Exception
+		{
+			System.out.println("Process doc...");
+			File inFile  = new File(sfile);
+	        BufferedReader reader = new BufferedReader(new FileReader(inFile));
+	        String sline = reader.readLine();
+	        System.out.println(sline);
+	        String[] sheaders = sline.split(",");
+	        sline = reader.readLine();
+	        String[] snodes = sline.split(",");
+			Element aroot;
+			Element achild;
+			aroot = (doc).createElement(sheaders[0]);
+			(doc).appendChild(aroot);
+	        while ((sline=reader.readLine()) != null) 
+	        {    		
+	        	System.out.println(sline);
+	        	achild = (doc).createElement(sheaders[1]);
+	        	String[] sdata = sline.split(",");
+	        	for (int x=0; x<snodes.length; ++x)
+	        	{
+					Element c = (doc).createElement(snodes[x]);  
+					c.appendChild((doc).createTextNode(sdata[x]));
+					achild.appendChild(c);
+	        	}
+	        	aroot.appendChild(achild);
+	        }		
+		}
+		public File createXML(Document doc) throws Exception
+		{
+			System.out.println("Creating xml...");
+			//TransformerFactory instance is used to create Transformer objects. 
+			TransformerFactory factory = TransformerFactory.newInstance();
+			Transformer transformer = factory.newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			
+			// create string from xml tree
+			StringWriter sw = new StringWriter();
+			StreamResult result = new StreamResult(sw);
+			DOMSource source = new DOMSource(doc);
+			transformer.transform(source, result);
+			String xmlString = sw.toString();
+			File file = new File("Output.xml");
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+			bw.write(xmlString);
+			bw.flush();
+			bw.close();
+			return file;
+		}
+	}
+	
+	public static void main(String[] args) throws Exception {
+		System.out.println("This server is running.");
+        ServerSocket listener = new ServerSocket(8081);
+        try {
+            while (true) {
+                new ServerXML(listener.accept()).start();
+            }
+        } finally {
+            listener.close();
+        }
+    }
+}
