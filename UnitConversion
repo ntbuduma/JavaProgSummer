@@ -1,0 +1,231 @@
+import java.util.*;
+
+
+public class UnitConversion 
+{
+	Scanner user_input = new Scanner(System.in);
+	double quantity;
+	String units;
+	String out;
+	Ratio inchCentimeter = new Ratio("inch", "centimeter", 2.54);
+	Ratio centimeterInch = new Ratio("centimeter", "inch", 1/2.54);
+	Ratio wounceGram = new Ratio("ounce(weight)", "gram", 28.375);
+	Ratio gramWounce = new Ratio("gram", "ounce", 1/28.375);
+	Ratio founceMilliliters = new Ratio("ounce(volume)", "milliliter", 29.57353);
+	Ratio millilitersFounce = new Ratio("milliliter", "ounce", 1/29.57353);
+	
+	String[] inputs = {"inch", "foot", "mile", "centimeter", "meter", "kilometer", "ounce(weight)",
+			"pound", "gram", "kilogram", "ounce(volume)", "gallon", "milliliter", "liter"};
+	
+	double[] conversionFactors = {1, 12, 5280*12, 1, 100, 100000, 1, 16, 1, 1000, 1, 128, 1, 1000};
+	
+	
+	/**
+	 * Asks for user input
+	 */
+	public void go()
+	{
+		System.out.println("Indicate units (inch, foot, mile, centimeter, meter, kilometer, ounce(weight),"
+				+ "pound, gram, kilogram, ounce(volume), gallon, milliliter, liter): ");
+		units = user_input.next();
+		System.out.println("Quantity?: ");
+		quantity = user_input.nextDouble();
+		System.out.println("Convert to which units (same options as above): ");
+		out = user_input.next();
+		Conversion c = new Conversion();
+		System.out.println(c.convert());
+	}
+	
+	/**
+	 * Solely for testing purposes
+	 */
+	public void test()
+	{
+		quantity = 10;
+		Conversion c = new Conversion();
+		for (int i = 0; i < inputs.length; i++)
+		{
+			units = inputs[i];
+			for (int j = 0; j < inputs.length; j++)
+			{
+				out = inputs[j];
+				System.out.println("Input: " + units);
+				System.out.println("Output: " + out);
+				System.out.println(c.convert());
+			}
+		}
+	}
+	
+	/**
+	 * @author Nithin
+	 * Ratio class
+	 */
+	public class Ratio
+	{
+		String input;
+		String convert;
+		double f;
+		/**
+		 * @param inputUnit
+		 * @param convertUnit
+		 * @param factor
+		 */
+		Ratio(String inputUnit, String convertUnit, double factor)
+		{
+			input = inputUnit;
+			convert = convertUnit;
+			f = factor;
+		}
+		
+		/**
+		 * @return the input string
+		 */
+		public String getInput()
+		{
+			return input;
+		}
+		
+		/**
+		 * @return the convert string
+		 */
+		public String getConvert()
+		{
+			return convert;
+		}
+		
+		/**
+		 * @return the multiplication factor
+		 */
+		public double getFactor()
+		{
+			return f;
+		}
+		
+	}
+	
+	/**
+	 * @author Nithin
+	 * Conversion class
+	 */
+	public class Conversion
+	{
+		Ratio[] ratios = new Ratio[6];
+		/**
+		 * Initializes ratios array with Ratio objects
+		 */
+		public Conversion()
+		{
+			ratios[0] = inchCentimeter;
+			ratios[1] = centimeterInch;
+			ratios[2] = wounceGram;
+			ratios[3] = gramWounce;
+			ratios[4] = founceMilliliters;
+			ratios[5] = millilitersFounce;
+		}
+		
+		/**
+		 * @return double converted amount
+		 */
+		public double convert()
+		{
+			int inputIndex = 0;
+			int outputIndex = 0;
+			int convertIndex = 0;
+			double inputFactor;
+			double convertFactor;
+			String baseInput = "";
+			String baseOutput = "";
+			double conversionFactor = 0;
+			Ratio x = new Ratio("", "", 0);
+			//Looks for the index of the input string in inputs array
+			for (int i = 0; i < inputs.length; i++)
+			{
+				if (units.equals(inputs[i]))
+				{
+					inputIndex = i;
+					break;
+				}
+			}
+			//Sets factor of multiplication for input by using index found above 
+			//in conversionFactors array
+			inputFactor = conversionFactors[inputIndex];
+			//Finds the base unit for the input
+			for (int i = inputIndex; i >= 0; i--)
+			{
+				if (conversionFactors[i] == 1)
+				{
+					baseInput = inputs[i];
+					break;
+				}
+			}
+			//Looks for the index of the output string in the inputs 
+			//(same as outputs so need for duplication) array
+			for (int i = 0; i < inputs.length; i++)
+			{
+				if (out.equals(inputs[i]))
+				{
+					outputIndex = i;
+					break;
+				}
+			}
+			//Finds the base unit for the output 
+			for (int i = outputIndex; i >= 0; i--)
+			{
+				if (conversionFactors[i] == 1)
+				{
+					baseOutput = inputs[i];
+					break;
+				}
+			}
+			//Finds the Ratio object corresponding with the correct conversion
+			//which will be checked soon after
+			for (int i = 0; i < ratios.length; i++)
+			{
+				if (baseInput == ratios[i].getInput())
+				{
+					x = ratios[i];
+					break;
+				}
+			}
+			//Check if the input and output base units are same system
+			//then factor is 1 * inputFactor
+			if (baseInput.equals(baseOutput))
+			{
+				conversionFactor = inputFactor;
+			}
+			//Checks if the conversion is between two different classes of units
+			// ie. distance -> volume, etc.
+			else if (!baseOutput.equals(x.getConvert()))
+			{
+				System.out.println("Cannot convert between different classes of units! Try again.");
+				return -1;
+			}
+			// Use the correct ratio object determined from last for loop
+			else
+				conversionFactor = x.getFactor() * inputFactor;
+			//Now we can finally convert!
+			for (int i = 0; i < inputs.length; i++)
+			{
+				if (out.equals(inputs[i]))
+				{
+					convertIndex = i;
+					break;
+				}
+			}
+			convertFactor = conversionFactors[convertIndex];
+			conversionFactor /= convertFactor;
+			return quantity * conversionFactor;
+		}
+	}
+	
+	/**
+	 * @param args calls method asking for user input
+	 */
+	public static void main(String[] args)
+	{
+		UnitConversion con = new UnitConversion();
+		con.go();
+		//con.test();
+	}
+	
+}
