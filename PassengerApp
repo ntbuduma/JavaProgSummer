@@ -1,0 +1,149 @@
+import java.awt.*;
+import java.applet.Applet;
+import java.awt.event.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+public class PassengerApp1 extends Applet 
+{
+	Font font = new Font("Arial",Font.PLAIN,14);
+	CheckboxGroup radioGroup;
+	Checkbox economy;
+	Checkbox business;
+	Checkbox first;
+	JTextPane out;
+	JScrollPane sp;
+	TextArea outText;
+	JList jlist = new JList();
+	JScrollPane jscrlp = new JScrollPane(jlist);
+	final ArrayList<String> names = new ArrayList<String>();
+	final ArrayList<String> rows = new ArrayList<String>();
+	final ArrayList<String> seats = new ArrayList<String>();
+	
+	
+	public void init()
+	{
+		setFont(font);
+		setSize(400,400);
+		radioGroup = new CheckboxGroup(); 
+        // first radio button. Gives the label text, tells to which 
+        // group it belongs and sets the default state (unselected) 
+        economy = new Checkbox("Economy Class", radioGroup,false);
+        economy.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+            	outText.setText("Please select Passenger");
+            	xmlReaderNames();
+            }
+        });
+        // same but selected  
+        business = new Checkbox("Business Class", radioGroup,false); 
+        business.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+            	outText.setText("Please select Passenger");
+            	xmlReaderNames();
+            }
+        });
+        // Label and state of the checkbox 
+        first = new Checkbox("First Class", radioGroup, false);
+        first.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+            	outText.setText("Please select Passenger");
+            	xmlReaderNames();
+            }
+        });
+        
+        economy.setBounds(20,120,100,30); 
+        business.setBounds(140,120,100,30);
+        first.setBounds(260,120,100,30);
+        
+        add(economy);
+        add(business);
+        add(first);
+        
+        String[] o = {"Please select class."};
+        jlist.setListData(o);
+        jscrlp.setPreferredSize(new Dimension(150, 200));
+        add(jscrlp);
+        
+        outText = new TextArea("", 5, 20, TextArea.SCROLLBARS_BOTH);
+        add(outText);
+	}
+	
+	
+
+	public String xmlReaderNames()
+	{
+		try {
+			names.clear();
+			seats.clear();
+			rows.clear();
+			File file = new File("Passengers.xml");
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document doc = db.parse(file);
+			doc.getDocumentElement().normalize();
+			final NodeList nameList = doc.getElementsByTagName("Name");
+			final NodeList rowList = doc.getElementsByTagName("Row");
+			final NodeList seatList = doc.getElementsByTagName("Seat");
+			Node node = null;
+			for (int i = 0; i < nameList.getLength(); i++)
+			{
+			    int row = Integer.parseInt(rowList.item(i).getTextContent());
+				node = nameList.item(i);
+				if ((row >= 1 && row <= 5 && first.getState() == true) || (row >= 6 && row <= 15 && business.getState() == true) 
+						|| (row >= 16 && economy.getState() == true))
+				{
+					names.add(node.getTextContent());
+					rows.add(rowList.item(i).getTextContent());
+					seats.add(seatList.item(i).getTextContent());
+				}
+				
+			}
+			jlist.setListData(names.toArray());
+       	 // Set the list selection mode to single-selection. 
+           jlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);             
+           // Add the list to a scroll pane. 
+           jlist.addListSelectionListener(new ListSelectionListener() 
+           {  
+             public void valueChanged(ListSelectionEvent le) 
+             {  
+               // Get the index of the changed item. 
+               int idx = jlist.getSelectedIndex(); 
+        
+               // Display selection, if item was selected. 
+               if(idx != -1) 
+                 outText.setText("Name: " + names.get(idx) + "\nRow: " + rows.get(idx) + 
+                		 "\nSeat: " + seats.get(idx));  
+
+             }  
+           });
+           jscrlp.revalidate();
+           jscrlp.repaint();
+			return "";
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "";
+	}
+}
