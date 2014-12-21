@@ -1,3 +1,3 @@
-Unit-Converter
+JavaProgSummer
 ==============
-a program that converts metric and customary units
+Some programs that I wrote during a summer java programming course
