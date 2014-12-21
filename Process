@@ -1,0 +1,179 @@
+import java.util.Random;
+
+import java.util.LinkedList;
+import java.util.Queue;
+
+import javax.swing.JProgressBar;
+
+import java.awt.Dimension;
+
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+/**
+ * @author Nithin
+ *
+ */
+public class Process extends Thread
+{
+	String name;
+	Random rand = new Random();
+	int processTime;
+	
+	/**
+	 * @param name name of process
+	 */
+	public Process(String name)
+	{
+		this.name = name;
+		processTime = rand.nextInt(500);
+	}
+	
+	/**
+	 * @return process time
+	 */
+	public int returnProcessTime()
+	{
+		return processTime;
+	}
+	
+	/**
+	 * @param cpuTime returns time allocated by cpu for process
+	 * runs a basic process
+	 */
+	public void run(int cpuTime)
+	{		
+		int x = 5 + 5;
+		//System.out.println("Process " + name + " complete: x = " + x + "!");
+		System.out.println("Process " + name);
+		//System.out.print(" Process Time: " + processTime);
+		try
+		{
+			Thread.sleep(cpuTime);
+		}
+		catch (InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+		}
+		processTime -= cpuTime;
+		//System.out.println(" CPU Time: " + cpuTime);
+	}
+	
+
+	/**
+	 * @author Nithin
+	 *
+	 */
+	public static class CPU
+	{
+		Queue<Process> running;
+		Random rand = new Random();
+		int originalTime = 0;
+		/**
+		 * @param p queue of processes
+		 */
+		public CPU(Queue<Process> p)
+		{
+			running = p;
+		}
+		
+		/**
+		 * @param b queue of progress bars
+		 */
+		public void act(Queue<JProgressBar> b)
+		{
+			Queue<JProgressBar> tempBars = b;
+			//sets up original process times for each process in running queue
+			Queue<Integer> originalTimes = new LinkedList<Integer>();
+			for(Process p : running)
+			{
+				originalTimes.add(p.returnProcessTime());
+			}
+			while (!running.isEmpty())
+			{
+				Process pr = running.remove();
+				JProgressBar bar = tempBars.remove();
+				originalTime = originalTimes.remove();
+				pr.run(rand.nextInt(100));
+				//checks to see if the process is not complete
+				if (pr.returnProcessTime() > 0)
+				{
+					//calculates percentage complete and sets that to bar value and string
+					running.add(pr);
+					double val = ((originalTime - pr.returnProcessTime() + 0.0)/originalTime * 100);
+					int x = (int)((originalTime - pr.returnProcessTime() + 0.0)/originalTime * 100);
+					bar.setValue(x);
+					String result = String.format("%.1f", val);
+					bar.setString(result + "%");
+					tempBars.add(bar);
+					originalTimes.add(originalTime);
+				}
+				//if the  process is complete
+				else
+				{
+					bar.setString("100%");
+					bar.setValue(100);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * @author Nithin
+	 *
+	 */
+	public static class RunProcess extends JPanel
+	{
+		Queue<Process> ready = new LinkedList<Process>();
+		
+		JPanel p = new JPanel();
+		
+		/**
+		 * initializes frame with panel and jprogress bars
+		 */
+		public RunProcess()
+		{
+			//initialize pane and size
+			Queue<JProgressBar> bars = new LinkedList<JProgressBar>();
+			JComponent newContentPane;
+			newContentPane = new JPanel();
+			newContentPane.setPreferredSize(new Dimension(490,200));
+			//add processes and bars to queues
+			for (int i = 1; i <= 10; i++)
+			{
+				ready.add(new Process("" + i + ""));
+				bars.add(new JProgressBar(0, 100));
+			}
+			int count = 1;
+			//adds each bar and a corresponding JLabel 
+			for( JProgressBar b: bars)
+			{
+				newContentPane.add(new JLabel("Process " + count));
+				b.setStringPainted(true);
+				newContentPane.add(b);
+				count++;
+			}
+			newContentPane.setOpaque(true);
+			//initialize JFrame
+			JFrame frame = new JFrame();
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setContentPane(newContentPane);
+			frame.pack();
+			frame.setVisible(true);
+			CPU p = new CPU(ready);
+			p.act(bars);
+		}
+		
+		//runs the process
+
+	}
+	public static void main (String args[])
+	{
+		// Create and set up the content pane.
+		RunProcess run = new RunProcess();
+	}
+
+}
